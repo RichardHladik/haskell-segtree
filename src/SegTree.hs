@@ -199,6 +199,14 @@ fromList list = fromList' emptyTree list 0
     where
         emptyTree = initTree $ Interval 0 (length list)
 
+sliceToList :: (Segmentable t u) => SegTree t u -> Interval -> [t]
+sliceToList node ival = foldr work [] [start..end - 1]
+    where
+        Interval start end = ival
+        work index = ([queryPoint index node] ++)
+
+toList :: (Segmentable t u) => SegTree t u -> [t]
+toList node = sliceToList node $ interval node
 
 instance Segmentable (Sum Int) (Sum Int) where
     apply (Sum op) (SegSummary (Sum val) len) = Sum (op * len + val)
