@@ -160,5 +160,45 @@ update op qInterval node = update' op qInterval unlazied
     where
         unlazied = unlazy qInterval node
 
+-- Assumed to be run on an unlazied SegTree.
+setPoint' :: (Segmentable t u) => t -> Int -> SegTree t u -> SegTree t u
+setPoint' _ _ Empty = Empty
+setPoint' val index node = case coverage of
+    Null       -> node
+    Everything -> node { value = val }
+    _          -> node'' { value = val' }
+        where
+            node'' = node { lson = recurse $ lson node, rson = recurse $ rson node }
+            recurse = setPoint' val index
+            val' = (value $ lson node'') <> (value $ rson node'')
+    where
+        coverage = getNodeCoverage (Interval index (index + 1)) node
+
+setPoint :: (Segmentable t u) => t -> Int -> SegTree t u -> SegTree t u
+setPoint val index node = setPoint' val index $ unlazied
+    where
+        unlazied = unlazy (Interval index (index + 1)) node
+
+----- Utility functions -----
+
+queryPoint :: (Segmentable t u) => Int -> SegTree t u -> t
+queryPoint index = query $ Interval index (index + 1)
+
+updatePoint :: (Segmentable t u) => u -> Int -> SegTree t u -> SegTree t u
+updatePoint op index = update op $ Interval index (index + 1)
+
+fromList' :: (Segmentable t u) => SegTree t u -> [t] -> Int -> SegTree t u
+fromList' emptyTree list offset = foldr doNext emptyTree ops
+    where
+        ops = zip list [offset..]
+        doNext :: (Segmentable t u) => (t, Int) -> SegTree t u -> SegTree t u
+        doNext (val, index) = setPoint val index
+
+fromList :: (Segmentable t u) => [t] -> SegTree t u
+fromList list = fromList' emptyTree list 0
+    where
+        emptyTree = initTree $ Interval 0 (length list)
+
+
 instance Segmentable (Sum Int) (Sum Int) where
     apply (Sum op) (SegSummary (Sum val) len) = Sum (op * len + val)
