@@ -39,7 +39,10 @@ intersect :: Interval -> Interval -> Interval
 intersect Everything i = i
 intersect i Everything = i
 intersect (Interval a b) (Interval c d)
-    | b >= c = Interval (max a c) (min b d)
+    | l < r = Interval l r
+    where
+        l = max a c
+        r = min b d
 intersect _ _ = Null
 
 intervalLength :: Interval -> Int
