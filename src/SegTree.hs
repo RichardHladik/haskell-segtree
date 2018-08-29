@@ -34,6 +34,15 @@ empty = Empty
 blankNode :: (Segmentable t u) => Interval -> SegTree t u
 blankNode ival = SegTree ival mempty mempty Empty Empty
 
+-- Creates an empty SegTree, padding the given interval to the nearest greater
+-- power of two
+initTree :: (Segmentable t u) => Interval -> SegTree t u
+initTree ival = blankNode adjusted
+    where
+        len = intervalLength ival
+        twoPower = head [p | i <- [0..], let p = 2 ^ i, p >= len]
+        Interval l _ = ival
+        adjusted = Interval l (l + twoPower)
 
 intersect :: Interval -> Interval -> Interval
 intersect Everything i = i
