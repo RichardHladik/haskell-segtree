@@ -148,8 +148,13 @@ update' op qInterval node = case coverage of
     Everything -> node'
     _          -> node''
         where
-            node'' = node { lson = recurse $ lson node, rson = recurse $ rson node }
+            node'' = node { lson = lson', rson = rson', value = val }
+            lson' = recurse $ lson node
+            rson' = recurse $ rson node
             recurse = update' op qInterval
+            val = lval <> rval
+            lval = interpretedVal lson'
+            rval = interpretedVal rson'
     where
         coverage = getNodeCoverage qInterval node
         node' = addOpToWhole op node
