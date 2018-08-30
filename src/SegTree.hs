@@ -136,7 +136,7 @@ setPoint' val index node = case coverage of
         where
             node'' = node { lson = recurse $ lson node, rson = recurse $ rson node }
             recurse = setPoint' val index
-            val' = (value $ lson node'') <> (value $ rson node'')
+            val' = (interpretedVal $ lson node'') <> (interpretedVal $ rson node'')
     where
         coverage = getNodeCoverage (Interval index (index + 1)) node
 
