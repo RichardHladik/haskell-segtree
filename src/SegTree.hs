@@ -98,13 +98,13 @@ addOpToWhole :: (Segmentable t u) => u -> SegTree t u -> SegTree t u
 addOpToWhole _ Empty = Empty
 addOpToWhole op node = node { lazyOp = (lazyOp node) <> op }
 
-applyLazy :: (Segmentable t u) => SegTree t u -> SegTree t u
-applyLazy node = node { value = newVal, lazyOp = mempty }
+interpretedVal :: (Segmentable t u) => SegTree t u -> t
+interpretedVal node = appliedVal
     where
         val = value node
         op = lazyOp node
         summary = SegSummary val (intervalLength $ interval node)
-        newVal = op `apply` summary
+        appliedVal = op `apply` summary
 
 
 -- Unlazies the SegTree, preparing it for the given query.
@@ -124,7 +124,7 @@ unlazy qInterval node = case coverage of
         nodeWithChildren = createChildren node
         lson' = passOp $ lson nodeWithChildren
         rson' = passOp $ rson nodeWithChildren
-        node' = (applyLazy node) { lson = lson', rson = rson' }
+        node' = node { lson = lson', rson = rson', value = interpretedVal node, lazyOp = mempty }
 
 
 createChildren :: (Segmentable t u) => SegTree t u -> SegTree t u
