@@ -68,12 +68,12 @@ empty :: SegTree t u
 empty = Empty
 
 -- Creates an empty SegTree with a given interval
-blankNode :: (Segmentable t u) => Interval -> SegTree t u
+blankNode :: (Monoid t, Monoid u) => Interval -> SegTree t u
 blankNode ival = SegTree ival mempty mempty Empty Empty
 
 -- Creates an empty SegTree, padding the given interval to the nearest greater
 -- power of two.
-initTree :: (Segmentable t u) => Interval -> SegTree t u
+initTree :: (Monoid t, Monoid u) => Interval -> SegTree t u
 initTree ival = blankNode adjusted
     where
         len = intervalLength ival
@@ -85,7 +85,7 @@ initTree ival = blankNode adjusted
 ----- Query/update -----
 
 -- Is assumed to be run on an unlazied SegTree, see unlazy below.
-query' :: (Segmentable t u) => Interval -> SegTree t u -> t
+query' :: (Monoid t) => Interval -> SegTree t u -> t
 query' _ Empty = mempty
 query' qInterval node = case coverage of
     Null       -> mempty
@@ -147,7 +147,7 @@ setPoint val index = setPoint' val index . unlazy (Interval index (index + 1))
 
 -- Applies a operation to the whole segment tree -- in effect, adds a lazy
 -- operation to the root
-addOpToWhole :: (Segmentable t u) => u -> SegTree t u -> SegTree t u
+addOpToWhole :: (Monoid u) => u -> SegTree t u -> SegTree t u
 addOpToWhole _ Empty = Empty
 addOpToWhole op node = node { lazyOp = (lazyOp node) <> op }
 
@@ -185,7 +185,7 @@ unlazy qInterval node = case coverage of
 
 -- Converts node's Empty children to SegTree children with empty value and
 -- correct bounds.
-createChildren :: (Segmentable t u) => SegTree t u -> SegTree t u
+createChildren :: (Monoid t, Monoid u) => SegTree t u -> SegTree t u
 createChildren Empty = error "Can't create children for an empty node"
 createChildren node
     | intervalLength (interval node) <= 1 = node
