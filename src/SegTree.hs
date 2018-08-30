@@ -4,6 +4,7 @@ module SegTree where
 
 import Data.Monoid ((<>), Sum(..))
 
+
 data Interval = Interval Int Int | Null | Everything
     deriving (Eq)
 
@@ -14,6 +15,10 @@ instance Show Interval where
 -- Summary of a given segment: the number of elements and its "sum"
 data SegSummary t = SegSummary t Int
 
+-- The values of the sequence are of type t, the updates performed on them are
+-- of type u. We have to both be able to "sum" the values and to compose
+-- multiple updates. Additionally, we want to be able to apply the updates to
+-- the values at some point.
 class (Monoid t, Monoid u) => Segmentable t u where
     apply :: u -> SegSummary t -> t
 
@@ -28,21 +33,8 @@ data SegTree t u = Empty |
                  }
     deriving (Show)
 
-empty :: SegTree t u
-empty = Empty
 
-blankNode :: (Segmentable t u) => Interval -> SegTree t u
-blankNode ival = SegTree ival mempty mempty Empty Empty
-
--- Creates an empty SegTree, padding the given interval to the nearest greater
--- power of two
-initTree :: (Segmentable t u) => Interval -> SegTree t u
-initTree ival = blankNode adjusted
-    where
-        len = intervalLength ival
-        twoPower = head [p | i <- [0..], let p = 2 ^ i, p >= len]
-        Interval l _ = ival
-        adjusted = Interval l (l + twoPower)
+----- Interval functions -----
 
 intersect :: Interval -> Interval -> Interval
 intersect Everything i = i
@@ -64,13 +56,33 @@ intervalLength (Interval a b) = b - a
 getNodeCoverage :: Interval -> SegTree t u -> Interval
 getNodeCoverage _ Empty = Everything
 getNodeCoverage qInterval node
-    | isection == Null         = Null
     | isection == nodeInterval = Everything
     | otherwise                = isection
     where
         isection = intersect nodeInterval qInterval
         nodeInterval = interval node
 
+----- Tree construction -----
+
+empty :: SegTree t u
+empty = Empty
+
+-- Creates an empty SegTree with a given interval
+blankNode :: (Segmentable t u) => Interval -> SegTree t u
+blankNode ival = SegTree ival mempty mempty Empty Empty
+
+-- Creates an empty SegTree, padding the given interval to the nearest greater
+-- power of two.
+initTree :: (Segmentable t u) => Interval -> SegTree t u
+initTree ival = blankNode adjusted
+    where
+        len = intervalLength ival
+        twoPower = head [2 ^ i | i <- [0..], 2 ^ i >= len]
+        Interval l _ = ival
+        adjusted = Interval l (l + twoPower)
+
+
+----- Query/update -----
 
 -- Is assumed to be run on an unlazied SegTree, see unlazy below.
 query' :: (Segmentable t u) => Interval -> SegTree t u -> t
@@ -88,9 +100,50 @@ query' qInterval node = case coverage of
 
 -- Wrapper for query' that unlazies its argument first.
 query :: (Segmentable t u) => Interval -> SegTree t u -> t
-query qInterval node = query' qInterval unlazied
+query qInterval = query' qInterval . unlazy qInterval
+
+
+-- Assumed to be run on an unlazied SegTree.
+update' :: (Segmentable t u) => u -> Interval -> SegTree t u -> SegTree t u
+update' _ _ Empty = Empty
+update' op qInterval node = case coverage of
+    Null       -> node
+    Everything -> addOpToWhole op node
+    _          -> node'
+        where
+            node' = node { lson = lson', rson = rson', value = val }
+            lson' = recurse $ lson node
+            rson' = recurse $ rson node
+            recurse = update' op qInterval
+            val = lval <> rval
+            lval = interpretedVal lson'
+            rval = interpretedVal rson'
     where
-        unlazied = unlazy qInterval node
+        coverage = getNodeCoverage qInterval node
+
+-- Wrapper for the former that unlazies the SegTree first.
+update :: (Segmentable t u) => u -> Interval -> SegTree t u -> SegTree t u
+update op qInterval = update' op qInterval . unlazy qInterval
+
+
+-- Assumed to be run on an unlazied SegTree.
+setPoint' :: (Segmentable t u) => t -> Int -> SegTree t u -> SegTree t u
+setPoint' _ _ Empty = Empty
+setPoint' val index node = case coverage of
+    Null       -> node
+    Everything -> node { value = val }
+    _          -> node'' { value = val' }
+        where
+            node'' = node { lson = recurse $ lson node, rson = recurse $ rson node }
+            recurse = setPoint' val index
+            val' = (value $ lson node'') <> (value $ rson node'')
+    where
+        coverage = getNodeCoverage (Interval index (index + 1)) node
+
+setPoint :: (Segmentable t u) => t -> Int -> SegTree t u -> SegTree t u
+setPoint val index = setPoint' val index . unlazy (Interval index (index + 1))
+
+----- Internals -----
 
 -- Applies a operation to the whole segment tree -- in effect, adds a lazy
 -- operation to the root
@@ -98,6 +151,7 @@ addOpToWhole :: (Segmentable t u) => u -> SegTree t u -> SegTree t u
 addOpToWhole _ Empty = Empty
 addOpToWhole op node = node { lazyOp = (lazyOp node) <> op }
 
+-- Returns the node's val with the lazy operation applied to it
 interpretedVal :: (Segmentable t u) => SegTree t u -> t
 interpretedVal node = appliedVal
     where
@@ -107,7 +161,9 @@ interpretedVal node = appliedVal
         appliedVal = op `apply` summary
 
 
--- Unlazies the SegTree, preparing it for the given query.
+-- Unlazies the SegTree, preparing it for the given query. Basically, the function ensures
+-- that when traversing the tree according to the given query, all the visited
+-- nodes have their lazyOp's already applied (= set to mempty)
 unlazy :: (Segmentable t u) => Interval -> SegTree t u -> SegTree t u
 unlazy _ Empty = Empty
 unlazy qInterval node = case coverage of
@@ -127,10 +183,13 @@ unlazy qInterval node = case coverage of
         node' = node { lson = lson', rson = rson', value = interpretedVal node, lazyOp = mempty }
 
 
+-- Converts node's Empty children to SegTree children with empty value and
+-- correct bounds.
 createChildren :: (Segmentable t u) => SegTree t u -> SegTree t u
 createChildren Empty = error "Can't create children for an empty node"
 createChildren node
     | intervalLength (interval node) <= 1 = node
+    -- Base case, otherwise the recursion would go indefinitely.
 createChildren node = node { lson = leftSon, rson = rightSon }
     where
         leftSon = newNodeIfEmpty l m $ lson node
@@ -139,50 +198,6 @@ createChildren node = node { lson = leftSon, rson = rightSon }
         bisect (Interval a b) = (a, (a + b) `div` 2, b)
         newNodeIfEmpty left right Empty = blankNode (Interval left right)
         newNodeIfEmpty _ _ a = a
-
--- Assumed to be run on an unlazied SegTree.
-update' :: (Segmentable t u) => u -> Interval -> SegTree t u -> SegTree t u
-update' _ _ Empty = Empty
-update' op qInterval node = case coverage of
-    Null       -> node
-    Everything -> node'
-    _          -> node''
-        where
-            node'' = node { lson = lson', rson = rson', value = val }
-            lson' = recurse $ lson node
-            rson' = recurse $ rson node
-            recurse = update' op qInterval
-            val = lval <> rval
-            lval = interpretedVal lson'
-            rval = interpretedVal rson'
-    where
-        coverage = getNodeCoverage qInterval node
-        node' = addOpToWhole op node
-
--- Wrapper for the former that unlazies the SegTree.
-update :: (Segmentable t u) => u -> Interval -> SegTree t u -> SegTree t u
-update op qInterval node = update' op qInterval unlazied
-    where
-        unlazied = unlazy qInterval node
-
--- Assumed to be run on an unlazied SegTree.
-setPoint' :: (Segmentable t u) => t -> Int -> SegTree t u -> SegTree t u
-setPoint' _ _ Empty = Empty
-setPoint' val index node = case coverage of
-    Null       -> node
-    Everything -> node { value = val }
-    _          -> node'' { value = val' }
-        where
-            node'' = node { lson = recurse $ lson node, rson = recurse $ rson node }
-            recurse = setPoint' val index
-            val' = (value $ lson node'') <> (value $ rson node'')
-    where
-        coverage = getNodeCoverage (Interval index (index + 1)) node
-
-setPoint :: (Segmentable t u) => t -> Int -> SegTree t u -> SegTree t u
-setPoint val index node = setPoint' val index $ unlazied
-    where
-        unlazied = unlazy (Interval index (index + 1)) node
 
 ----- Utility functions -----
 
@@ -212,6 +227,9 @@ sliceToList node ival = foldr work [] [start..end - 1]
 
 toList :: (Segmentable t u) => SegTree t u -> [t]
 toList node = sliceToList node $ interval node
+
+
+----- Specific instances -----
 
 instance Segmentable (Sum Int) (Sum Int) where
     apply (Sum op) (SegSummary (Sum val) len) = Sum (op * len + val)
