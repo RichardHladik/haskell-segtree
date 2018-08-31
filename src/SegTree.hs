@@ -231,9 +231,3 @@ sliceToList node ival = foldr work [] [start..end - 1]
 
 toList :: (Segmentable t u) => SegTree t u -> [t]
 toList node = sliceToList node $ interval node
-
-
------ Specific instances -----
-
-instance Segmentable (Sum Int) (Sum Int) where
-    apply (Sum op) (SegSummary (Sum val) len) = Sum (op * len + val)
