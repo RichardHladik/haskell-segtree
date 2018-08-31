@@ -1,6 +1,10 @@
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 
-module SegTree where
+module SegTree (
+    Interval(..), SegSummary(..), Segmentable(..), SegTree, initTree, query,
+    update, setPoint, queryPoint, updatePoint, fromList, fromList',
+    sliceToList, toList
+  ) where
 
 import Data.Monoid ((<>), Sum(..))
 
@@ -223,7 +227,7 @@ sliceToList :: (Segmentable t u) => SegTree t u -> Interval -> [t]
 sliceToList node ival = foldr work [] [start..end - 1]
     where
         Interval start end = ival
-        work index = ([queryPoint index node] ++)
+        work index = (queryPoint index node :)
 
 toList :: (Segmentable t u) => SegTree t u -> [t]
 toList node = sliceToList node $ interval node
