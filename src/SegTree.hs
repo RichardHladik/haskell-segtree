@@ -13,6 +13,8 @@ data Interval = Interval Int Int | Null | Everything
     deriving (Eq)
 
 instance Show Interval where
+    show Null = "Null"
+    show Everything = "Everything"
     show (Interval a b) = "[" ++ show a ++ " " ++ show b ++ ")"
 
 
