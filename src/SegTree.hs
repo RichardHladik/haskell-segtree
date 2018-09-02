@@ -2,8 +2,9 @@
 
 module SegTree (
     Interval(..), SegSummary(..), Segmentable(..), SegTree(..), intersect,
-    intervalLength, unitInterval, getNodeCoverage, initTree, query, update,
-    setPoint, queryPoint, updatePoint, fromList, fromList', sliceToList, toList
+    intervalLength, unitInterval, normInterval, getNodeCoverage, initTree,
+    query, update, setPoint, queryPoint, updatePoint, fromList, fromList',
+    sliceToList, toList
   ) where
 
 import Data.Monoid ((<>), Sum(..))
@@ -42,11 +43,15 @@ data SegTree t u = Empty |
 
 ----- Interval functions -----
 
+normInterval :: Interval -> Interval
+normInterval (Interval a b)
+    | a >= b = Null
+normInterval a = a
+
 intersect :: Interval -> Interval -> Interval
 intersect Everything i = i
 intersect i Everything = i
-intersect (Interval a b) (Interval c d)
-    | l < r = Interval l r
+intersect (Interval a b) (Interval c d) = normInterval $ Interval l r
     where
         l = max a c
         r = min b d
