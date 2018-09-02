@@ -48,10 +48,6 @@ instance (CommutativeMonoid a, Exponentiable a) => Segmentable a (Apply a) where
     apply (Apply a) (SegSummary val len) = val <> (a `power` len)
 
 
-instance Exponentiable (Sum Int) where
-    (Sum a) `power` b = Sum $ a * b
-
-
 -- Just an example, Max can be implemented similarly
 data Min a = MinInfinity | Min a
 instance (Show a) => Show (Min a) where
@@ -62,3 +58,12 @@ instance (Ord a) => Monoid (Min a) where
     MinInfinity `mappend` a = a
     a `mappend` MinInfinity = a
     Min a `mappend` Min b = Min (a `min` b)
+
+
+instance Exponentiable (Sum Int) where
+    (Sum a) `power` b = Sum $ a * b
+instance CommutativeMonoid (Sum Int)
+
+instance (Ord a) => Exponentiable (Min a) where
+    a `power` b = a
+instance (Ord a) => CommutativeMonoid (Min a)
