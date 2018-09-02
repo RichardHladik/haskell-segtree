@@ -6,8 +6,6 @@ import SegTree.Instances
 import Data.Monoid
 import Text.Printf
 
-isPowerOfTwo x = x `elem` [2 ^ i | i <- [0..], 2 ^ i <= x]
-
 instance (Arbitrary a) => Arbitrary (Apply a) where
     arbitrary = Apply <$> arbitrary
 
@@ -30,9 +28,32 @@ instance (Segmentable t u, Arbitrary t, Arbitrary u) => Arbitrary (SegTree t u) 
         let len = length list
         return $ fromList' (initTree $ Interval offset (offset + len)) list offset
 
-
+-- We choose a particular type to make things easier
 type SumTree = SegTree (Sum Int) (Apply (Sum Int))
 
+arbitraryEmptyTree :: Gen SumTree
+arbitraryEmptyTree = initTree <$> arbitrary `suchThat` (notSpecial)
+    where
+        notSpecial Null = False
+        notSpecial Everything = False
+        notSpecial _ = True
+
+data Query = Query Interval | Update (Apply (Sum Int)) Interval
+    deriving (Show)
+instance Arbitrary Query where
+    arbitrary = do
+        arbitraryQuery <- Query <$> arbitrary
+        arbitraryUpdate <- Update <$> arbitrary <*> arbitrary
+        elements [arbitraryQuery, arbitraryUpdate]
+
+data QuerySet = QuerySet SumTree [Query]
+    deriving (Show)
+instance Arbitrary QuerySet where
+    arbitrary = QuerySet <$> arbitraryEmptyTree <*> arbitrary
+
+
+isPowerOfTwo :: Int -> Bool
+isPowerOfTwo x = x `elem` [2 ^ i | i <- [0..], 2 ^ i <= x]
 
 prop_fromToList list = len_poweroftwo && start_same && end_mempty
     where
