@@ -12,7 +12,7 @@ instance (Arbitrary a) => Arbitrary (Apply a) where
     arbitrary = Apply <$> arbitrary
 
 instance Arbitrary Interval where
-    arbitrary = do
+    arbitrary = sized $ \n -> do
         x1 <- arbitrary
         x2 <- arbitrary
         let a = min x1 x2
@@ -20,7 +20,7 @@ instance Arbitrary Interval where
         frequency 
             [ (1, return Null)
             , (1, return Everything)
-            , (5, return $ Interval a b)
+            , (n, return $ Interval a b)
             ]
 
 instance (Segmentable t u, Arbitrary t, Arbitrary u) => Arbitrary (SegTree t u) where
