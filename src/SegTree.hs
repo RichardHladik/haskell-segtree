@@ -2,8 +2,8 @@
 
 module SegTree (
     Interval(..), SegSummary(..), Segmentable(..), SegTree(..), intersect,
-    intervalLength, getNodeCoverage, initTree, query, update, setPoint,
-    queryPoint, updatePoint, fromList, fromList', sliceToList, toList
+    intervalLength, unitInterval, getNodeCoverage, initTree, query, update,
+    setPoint, queryPoint, updatePoint, fromList, fromList', sliceToList, toList
   ) where
 
 import Data.Monoid ((<>), Sum(..))
@@ -67,6 +67,9 @@ getNodeCoverage qInterval node
     where
         isection = intersect nodeInterval qInterval
         nodeInterval = interval node
+
+unitInterval :: Int -> Interval
+unitInterval i = Interval i (i + 1)
 
 ----- Tree construction -----
 
@@ -208,10 +211,10 @@ createChildren node = node { lson = leftSon, rson = rightSon }
 ----- Utility functions -----
 
 queryPoint :: (Segmentable t u) => Int -> SegTree t u -> t
-queryPoint index = query $ Interval index (index + 1)
+queryPoint index = query $ unitInterval index
 
 updatePoint :: (Segmentable t u) => u -> Int -> SegTree t u -> SegTree t u
-updatePoint op index = update op $ Interval index (index + 1)
+updatePoint op index = update op $ unitInterval index
 
 fromList' :: (Segmentable t u) => SegTree t u -> [t] -> Int -> SegTree t u
 fromList' emptyTree list offset = foldr doNext emptyTree ops
