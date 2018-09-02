@@ -1,9 +1,9 @@
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 
 module SegTree (
-    Interval(..), SegSummary(..), Segmentable(..), SegTree, initTree, query,
-    update, setPoint, queryPoint, updatePoint, fromList, fromList',
-    sliceToList, toList
+    Interval(..), SegSummary(..), Segmentable(..), SegTree(..), intersect,
+    intervalLength, getNodeCoverage, initTree, query, update, setPoint,
+    queryPoint, updatePoint, fromList, fromList', sliceToList, toList
   ) where
 
 import Data.Monoid ((<>), Sum(..))
