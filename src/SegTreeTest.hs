@@ -3,7 +3,7 @@
 import Test.QuickCheck
 import SegTree
 import SegTree.Instances
-import Data.Monoid
+import Data.List (foldl')
 import Text.Printf
 
 instance (Arbitrary a) => Arbitrary (Apply a) where
@@ -14,13 +14,14 @@ instance Arbitrary Interval where
         x1 <- arbitrary
         x2 <- arbitrary
         let a = min x1 x2
-        let b = 1 + max x1 x2
+        let b = 1 + max x1 x2 -- discard the possibility of zero-length Intervals
         frequency 
             [ (1, return Null)
             , (1, return Everything)
             , (n, return $ Interval a b)
             ]
 
+-- Doesn't generate "sparse" SegTrees, but suffices for our purposes
 instance (Segmentable t u, Arbitrary t, Arbitrary u) => Arbitrary (SegTree t u) where
     arbitrary = do
         offset <- arbitrary
@@ -46,6 +47,7 @@ instance Arbitrary Query where
         arbitraryUpdate <- Update <$> arbitrary <*> arbitrary
         elements [arbitraryQuery, arbitraryUpdate]
 
+-- A single "problem instance": an empty SumTree, along with queries to process
 data QuerySet = QuerySet SumTree [Query]
     deriving (Show)
 instance Arbitrary QuerySet where
@@ -68,10 +70,10 @@ prop_sumsCorrectly list = query Everything tree == listSum
         listSum = mconcat list
         tree = fromList list :: SumTree
 
-prop_intervalsPowersOfTwo tree = work tree
+prop_intervalsPowersOfTwo tree = go tree
     where
-        work Empty = True
-        work n     = checkNode n && work (lson n) && work (rson n)
+        go Empty = True
+        go n     = checkNode n && go (lson n) && go (rson n)
         checkNode = isPowerOfTwo . intervalLength . interval
         types = ( tree :: SumTree )
 
@@ -82,5 +84,5 @@ tests =
     ]
 
 main = do
-    mapM work tests
-    where work (t, s) = printf "%-25s: " s >> quickCheck t
+    mapM go tests
+    where go (t, s) = printf "%-25s: " s >> quickCheck t
