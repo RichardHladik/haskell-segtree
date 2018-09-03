@@ -3,11 +3,11 @@
 ----- Specific Segmentable instances for common use cases. -----
 
 module SegTree.Instances (
-    Exponentiable(..), CommutativeMonoid(..), Change(..), Apply(..), Min(..)
+    Exponentiable(..), CommutativeMonoid(..), Change(..), Apply(..), Min(..), Sum(..)
   ) where
 
 import SegTree
-import Data.Monoid
+import Data.Monoid (Sum(..))
 
 
 -- Main reason for this typeclass is to allow easy overloading of the power

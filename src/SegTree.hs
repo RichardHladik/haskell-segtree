@@ -4,10 +4,11 @@ module SegTree (
     Interval(..), SegSummary(..), Segmentable(..), SegTree(..), intersect,
     intervalLength, unitInterval, normInterval, getNodeCoverage, initTree,
     query, update, setPoint, queryPoint, updatePoint, fromList, fromList',
-    sliceToList, toList
+    sliceToList, toList,
+    (<>)
   ) where
 
-import Data.Monoid ((<>), Sum(..))
+import Data.Monoid ((<>))
 
 
 data Interval = Interval Int Int | Null | Everything
