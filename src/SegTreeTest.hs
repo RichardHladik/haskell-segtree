@@ -57,6 +57,55 @@ instance Arbitrary QuerySet where
 isPowerOfTwo :: Int -> Bool
 isPowerOfTwo x = x `elem` [2 ^ i | i <- [0..], 2 ^ i <= x]
 
+inInterval :: Int -> Interval -> Bool
+inInterval _ Everything = True
+inInterval _ Null = False
+inInterval num (Interval a b) = a <= num && b > num
+
+
+----- Fake SegTree -----
+-- FakeTree is a simple list-based data structure which mimicks the SegTree.
+
+data FakeTree = FakeTree { getOffset :: Int, getValues :: [Sum Int] }
+
+zipFakeTree :: FakeTree -> [(Int, Sum Int)]
+zipFakeTree (FakeTree offset xs) = zip [offset..] xs
+
+fakeMap :: (Int -> Sum Int -> Sum Int) -> FakeTree -> FakeTree
+fakeMap f ft = ft { getValues = map (uncurry f) $ zipFakeTree ft }
+
+fakeUpdate :: Apply (Sum Int) -> Interval -> FakeTree -> FakeTree
+fakeUpdate (Apply val) ival ft = fakeMap go ft
+    where
+        go ix = if inInterval ix ival then (val <>) else id
+
+fakeQuery :: Interval -> FakeTree -> Sum Int
+fakeQuery ival ft = foldl' (<>) mempty filtered
+    where
+        filterIn = filter ((`inInterval` ival) . fst)
+        filtered = snd . unzip . filterIn $ zipFakeTree ft
+
+
+realToFake :: SumTree -> FakeTree
+realToFake st = FakeTree offset $ toList st
+    where
+        Interval offset _ = interval st
+
+fakeProcess :: QuerySet -> [Sum Int]
+fakeProcess (QuerySet tr qs) = reverse . snd $ foldr go (realToFake tr,[]) $ reverse qs
+    where
+        go (Query iv) (t,res) = (t,fakeQuery iv t : res)
+        go (Update val iv) (t,res) = (fakeUpdate val iv t, res)
+
+realProcess :: QuerySet -> [Sum Int]
+realProcess (QuerySet tree qs) = reverse . snd $ foldr go (tree,[]) $ reverse qs
+    where
+        go (Query iv) (t,res) = (t,query iv t : res)
+        go (Update val iv) (t,res) = (update val iv t, res)
+
+
+----- Properties -----
+
 prop_fromToList list = len_poweroftwo && start_same && end_mempty
     where
         len_poweroftwo = isPowerOfTwo $ length list'
@@ -77,10 +126,13 @@ prop_intervalsPowersOfTwo tree = go tree
         checkNode = isPowerOfTwo . intervalLength . interval
         types = ( tree :: SumTree )
 
+prop_realIsFake queries = realProcess queries == fakeProcess queries
+
 tests =
     [(property prop_fromToList, "fromList and toList")
     ,(property prop_sumsCorrectly, "sum sums")
     ,(property prop_intervalsPowersOfTwo, "|intervals| = 2 ^ k")
+    ,(property prop_realIsFake, "real is fake (bruteforce)")
     ]
 
 main = do
