@@ -22,7 +22,7 @@ import Data.Monoid ((<>))
 
 -- | A half-closed interval open on the right. `Null` represents an empty
 -- interval, `Everything` represents its complement.
-data Interval = Interval Int Int | Null | Everything
+data Interval = Interval {-# UNPACK #-} !Int {-# UNPACK #-} !Int | Null | Everything
     deriving (Eq)
 
 instance Show Interval where
@@ -32,7 +32,7 @@ instance Show Interval where
 
 
 -- | Summary of a given segment: the number of elements and their "`mconcat`".
-data SegSummary t = SegSummary t Int
+data SegSummary t = SegSummary !t {-# UNPACK #-} !Int
 
 -- | The `Segmentable` type class is used for type pairs that can be (together)
 -- used in a `SegTree`. The values of the sequence the `SegTree` operates on
@@ -53,11 +53,11 @@ class (Monoid t, Monoid u) => Segmentable t u where
 -- interval.
 data SegTree t u = Empty |
                  SegTree {
-                     interval :: Interval, -- ^ The interval managed by this node
-                     value :: t, -- ^ The result of calling `mconcat` on the given interval (disregarding `lazyOp`)
-                     lazyOp :: u, -- ^ The operation that is to be applied to each element in the interval
-                     lson :: SegTree t u, -- ^ Left son.
-                     rson :: SegTree t u  -- ^ Right son.
+                     interval :: !Interval, -- ^ The interval managed by this node
+                     value :: !t, -- ^ The result of calling `mconcat` on the given interval (disregarding `lazyOp`)
+                     lazyOp :: !u, -- ^ The operation that is to be applied to each element in the interval
+                     lson :: !(SegTree t u), -- ^ Left son.
+                     rson :: !(SegTree t u)  -- ^ Right son.
                  }
     deriving (Show)
 
