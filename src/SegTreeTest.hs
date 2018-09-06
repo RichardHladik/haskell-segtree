@@ -64,7 +64,8 @@ inInterval num (Interval a b) = a <= num && b > num
 
 
 ----- Fake SegTree -----
--- FakeTree is a simple list-based data structure which mimicks the SegTree.
+-- FakeTree is a simple list-based data structure which mimicks the SegTree. It
+-- serves as a bruteforce implementation to check against.
 
 data FakeTree = FakeTree { getOffset :: Int, getValues :: [Sum Int] }
 
@@ -80,7 +81,7 @@ fakeUpdate (Apply val) ival ft = fakeMap go ft
         go ix = if inInterval ix ival then (val <>) else id
 
 fakeQuery :: Interval -> FakeTree -> Sum Int
-fakeQuery ival ft = foldl' (<>) mempty filtered
+fakeQuery ival ft = mconcat filtered
     where
         filterIn = filter ((`inInterval` ival) . fst)
         filtered = snd . unzip . filterIn $ zipFakeTree ft
