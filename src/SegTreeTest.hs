@@ -138,4 +138,4 @@ tests =
 
 main = do
     mapM go tests
-    where go (t, s) = printf "%-25s: " s >> quickCheck t
+    where go (t, s) = printf "%-25s: " s >> quickCheckWith stdArgs { maxSuccess = 300, maxSize = 300 } t
