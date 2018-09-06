@@ -8,12 +8,15 @@
 -}
 
 module SegTree (
-    Interval(..), SegSummary(..), Segmentable(..), SegTree(..), intersect,
-    intervalLength, unitInterval, normInterval, initTree, query, update,
-    setPoint, queryPoint, updatePoint, fromList, fromList', sliceToList,
-    toList,
+    -- * Base classes and types
+    Segmentable(..), SegTree(..), SegSummary(..),
+    -- * Intervals
+    Interval(..), intersect, intervalLength, unitInterval, normInterval,
+    -- * Query/update
+    initTree, query, update, setPoint, queryPoint, updatePoint,
+    -- * Helper functions
+    fromList, fromList', sliceToList, toList,
     -- * Reexports
-    --
     (<>)
   ) where
 
@@ -42,15 +45,16 @@ data SegSummary t = SegSummary !t {-# UNPACK #-} !Int
 -- updates. Moreover, `apply` provides a way to apply the updates to a segment.
 class (Monoid t, Monoid u) => Segmentable t u where
     -- | Calculates the result of applying the operation to the given range of
-    -- elements.
+    -- elements, given its length and the current value of `mconcat` of that
+    -- segment.
     apply :: u -> SegSummary t -> t
 
 
 -- | A segment tree node. For almost all operation, @t u@ is assumed to be an
--- instance of `Segmentable` @t u@. Represents an imaginary list of values of
--- type @t@. The supported operations are: perform an update of type @u@ to all
--- values in an interval and calculate the result of performing `mconcat` on an
--- interval.
+-- instance of `Segmentable` @t u@. Represents a figurative, integer-indexed
+-- list of values of type @t@. The supported operations are: perform an update
+-- of type @u@ to all values in an interval and calculate the result of
+-- performing `mconcat` on an interval.
 data SegTree t u = Empty |
                  SegTree {
                      interval :: !Interval, -- ^ The interval managed by this node
