@@ -1,0 +1,5 @@
+# haskell-segtree
+
+haskell-segtree is an polymorphic implementation of a lazy segment tree (lazy
+as in the context of data structures, not in the Haskell way) written in
+Haskell.
