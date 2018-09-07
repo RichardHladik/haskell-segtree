@@ -1,7 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 
 {-|
- Module      : SegTree
+ Module      : SegTree.Instances
  Copyright   : (c) Richard Hladík, 2018
  License     : BSD3
  Maintainer  : rihl@uralyx.cz

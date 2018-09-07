@@ -52,7 +52,7 @@ class (Monoid t, Monoid u) => Segmentable t u where
 
 -- | A segment tree node. For almost all operation, @t u@ is assumed to be an
 -- instance of `Segmentable` @t u@. Represents a figurative, integer-indexed
--- list of values of type @t@. The supported operations are: perform an update
+-- list of values of type @t@. The two main operations are: perform an update
 -- of type @u@ to all values in an interval and calculate the result of
 -- performing `mconcat` on an interval.
 data SegTree t u = Empty |
@@ -70,9 +70,9 @@ data SegTree t u = Empty |
 
 -- | Converts zero- and negative-length intervals to `Null`
 normInterval :: Interval -> Interval
-normInterval (Interval a b)
-    | a >= b = Null
-normInterval a = a
+normInterval i@(Interval a b)
+    | a >= b    = Null
+    | otherwise = i
 
 -- | Intersects two intervals.
 intersect :: Interval -> Interval -> Interval
@@ -133,7 +133,7 @@ query' :: (Monoid t) => Interval -> SegTree t u -> t
 query' _ Empty = mempty
 query' qInterval node = case getNodeCoverage qInterval node of
     Null       -> mempty
-    Everything -> value node
+    Everything -> value node -- lazyOp is mempty, thanks to unlazy
     _          -> lres <> rres
         where
             subq = query' qInterval
