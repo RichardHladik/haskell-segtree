@@ -109,20 +109,9 @@ unitInterval i = Interval i (i + 1)
 
 ----- Tree construction -----
 
--- | Creates an empty `SegTree` managing a given interval. Internal use only
--- (might blow up later if the interval length isn't a power of two).
-blankNode :: (Monoid t, Monoid u) => Interval -> SegTree t u
-blankNode ival = SegTree ival mempty mempty Empty Empty
-
--- | Creates an empty `SegTree`, padding the given interval from the right to
--- the nearest greater power of two.
+-- | Creates an empty `SegTree` managing a given interval.
 initTree :: (Monoid t, Monoid u) => Interval -> SegTree t u
-initTree ival = blankNode adjusted
-    where
-        len = intervalLength ival
-        twoPower = head [2 ^ i | i <- [0..], 2 ^ i >= len]
-        Interval l _ = ival
-        adjusted = Interval l (l + twoPower)
+initTree ival = SegTree ival mempty mempty Empty Empty
 
 
 ----- Query/update -----

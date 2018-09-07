@@ -107,13 +107,7 @@ realProcess (QuerySet tree qs) = reverse . snd $ foldr go (tree,[]) $ reverse qs
 
 ----- Properties -----
 
-prop_fromToList list = len_poweroftwo && start_same && end_mempty
-    where
-        len_poweroftwo = isPowerOfTwo $ length list'
-        tree = fromList list :: SumTree
-        list' = toList tree
-        start_same = and $ zipWith (==) list list'
-        end_mempty = all (== mempty) $ drop (length list) list'
+prop_fromToList list = toList (fromList list :: SumTree) == list
 
 prop_sumsCorrectly list = query Everything tree == listSum
     where
@@ -132,7 +126,6 @@ prop_realIsFake queries = realProcess queries == fakeProcess queries
 tests =
     [(property prop_fromToList, "fromList and toList")
     ,(property prop_sumsCorrectly, "sum sums")
-    ,(property prop_intervalsPowersOfTwo, "|intervals| = 2 ^ k")
     ,(property prop_realIsFake, "real is fake (bruteforce)")
     ]
 
