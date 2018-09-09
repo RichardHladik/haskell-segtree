@@ -109,9 +109,14 @@ unitInterval i = Interval i (i + 1)
 
 ----- Tree construction -----
 
+-- | Creates an empty `SegTree` node managing a given interval.
+blankNode :: (Monoid t, Monoid u) => Interval -> SegTree t u
+blankNode ival = SegTree ival mempty mempty Empty Empty
+
+
 -- | Creates an empty `SegTree` managing a given interval.
 initTree :: (Monoid t, Monoid u) => Interval -> SegTree t u
-initTree ival = SegTree ival mempty mempty Empty Empty
+initTree = blankNode
 
 
 ----- Query/update -----
